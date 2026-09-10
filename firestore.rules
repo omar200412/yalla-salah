@@ -1,0 +1,140 @@
+rules_version = '2';
+
+// Yalla Salah — Firestore security rules
+//
+// Model
+//   rooms/{code}              code == 6-digit string, IS the document id
+//     createdAt : timestamp
+//     slots     : { a: <uid>|null, b: <uid>|null }   // the two members
+//     names     : { <uid>: string }                  // display names
+//
+//   rooms/{code}/days/{YYYY-MM-DD}
+//     updatedAt : timestamp
+//     marks     : { <uid>: { fajr|dhuhr|asr|maghrib|isha: <epoch-ms>|null } }
+//
+// The 6-digit code is a shared secret: any signed-in (anonymous) user who knows
+// it can read the room and claim one of its two slots. Once both slots are
+// taken, no third party can write. A member may only ever change their OWN
+// slot / name / marks.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /rooms/{code} {
+      function me() {
+        return request.auth.uid;
+      }
+      function existing() {
+        return resource.data;
+      }
+      function incoming() {
+        return request.resource.data;
+      }
+      function validCode() {
+        return code.matches('^[0-9]{6}$');
+      }
+      function validShape() {
+        return incoming().keys().hasOnly(['createdAt', 'slots', 'names'])
+          && incoming().slots.keys().hasOnly(['a', 'b']);
+      }
+      function validName(uid) {
+        return incoming().names[uid] is string
+          && incoming().names[uid].size() > 0
+          && incoming().names[uid].size() <= 40;
+      }
+      function isCurrentMember() {
+        return existing().slots.a == me() || existing().slots.b == me();
+      }
+      function slotsUnchanged() {
+        return incoming().slots.a == existing().slots.a
+          && incoming().slots.b == existing().slots.b;
+      }
+      function onlyOwnName() {
+        return incoming().names.diff(existing().names).affectedKeys().hasOnly([me()]);
+      }
+      function joiningOpenSlot() {
+        return (existing().slots.a == null
+                 && existing().slots.b != me()
+                 && incoming().slots.a == me()
+                 && incoming().slots.b == existing().slots.b)
+            || (existing().slots.b == null
+                 && existing().slots.a != me()
+                 && incoming().slots.b == me()
+                 && incoming().slots.a == existing().slots.a);
+      }
+      function leavingOwnSlot() {
+        return (existing().slots.a == me()
+                 && incoming().slots.a == null
+                 && incoming().slots.b == existing().slots.b)
+            || (existing().slots.b == me()
+                 && incoming().slots.b == null
+                 && incoming().slots.a == existing().slots.a);
+      }
+
+      allow get: if signedIn();
+      allow list: if false;
+
+      allow create: if signedIn()
+        && validCode()
+        && validShape()
+        && incoming().slots.a == me()
+        && incoming().slots.b == null
+        && incoming().names.keys().hasOnly([me()])
+        && validName(me());
+
+      allow update: if signedIn()
+        && validCode()
+        && validShape()
+        && (
+             (isCurrentMember() && slotsUnchanged() && onlyOwnName() && validName(me()))
+          || (joiningOpenSlot() && onlyOwnName() && validName(me()))
+          || (leavingOwnSlot() && onlyOwnName())
+        );
+
+      allow delete: if false;
+
+      match /days/{day} {
+        function dayMember() {
+          let path = /databases/$(database)/documents/rooms/$(code);
+          let room = exists(path) ? get(path).data : null;
+          return signedIn()
+            && room != null
+            && (room.slots.a == request.auth.uid || room.slots.b == request.auth.uid);
+        }
+        function validDay() {
+          return day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+        }
+        function marksShape() {
+          return request.resource.data.keys().hasOnly(['marks', 'updatedAt']);
+        }
+
+        allow get: if dayMember();
+        allow list: if false;
+
+        allow create: if dayMember()
+          && validDay()
+          && marksShape()
+          && request.resource.data.marks.keys().hasOnly([request.auth.uid]);
+
+        allow update: if dayMember()
+          && validDay()
+          && marksShape()
+          && request.resource.data.marks
+               .diff(resource.data.marks)
+               .affectedKeys()
+               .hasOnly([request.auth.uid]);
+
+        allow delete: if false;
+      }
+    }
+
+    // Everything else is denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

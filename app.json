@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Yalla Salah",
+    "slug": "yalla-salah",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "yallasalah",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0F1412",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E7C61"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yallasalah.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Yalla Salah uses your location to calculate accurate prayer times for your city."
+      }
+    },
+    "android": {
+      "package": "com.yallasalah.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0E7C61"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Yalla Salah uses your location to calculate accurate prayer times for your city."
+        }
+      ]
+    ]
+  }
+}

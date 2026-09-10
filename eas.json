@@ -1,0 +1,48 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "REPLACE_ME"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "REPLACE_ME",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "REPLACE_ME"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
