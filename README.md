@@ -275,4 +275,5 @@ yalla-salah/
 | Prayer times look wrong | Settings → pick your city or "Detect my location", and choose the calculation method used in your country. |
 | Versions mismatch after `npm install` | `npx expo install --fix` snaps every Expo package to the SDK 54 version. |
 | EAS build fails on missing env | Fill `eas.json` → `build.preview.env`, or use `eas env:create` (step 5A). |
+| EAS build fails in *Install dependencies* with `Missing: @react-native-async-storage/async-storage@1.24.0 from lock file` | `@firebase/auth` declares an optional peer dep on async-storage `^1.18.1` while Expo SDK 54 needs `2.2.0`. Newer npm tolerates it, EAS's older npm does not. Fixed by [`.npmrc`](.npmrc) (`legacy-peer-deps=true`); if you ever regenerate the lockfile, keep that file and run `npm install` (not `npm install --force`). |
 | Reinstalled the app and can't rejoin ("room already has two people") | Anonymous sign-in creates a fresh identity on reinstall, so your old slot is orphaned. Fix: on **either** phone, create a brand-new room (Onboarding → Create) and share the new code; the other person taps **Settings → Leave room**, then joins the new code. |
