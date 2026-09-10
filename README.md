@@ -184,21 +184,19 @@ re-run `npx expo prebuild --clean` first.
 
 ---
 
-## 6. Put it on GitHub
+## 6. GitHub
+
+This project is already on GitHub (private):
+<https://github.com/omar200412/yalla-salah> — `main` branch.
 
 ```bash
-git init
-git add .
-git commit -m "Yalla Salah: initial version"
-gh repo create yalla-salah --private --source=. --push
-# no gh CLI? create an empty repo on github.com, then:
-#   git remote add origin git@github.com:<you>/yalla-salah.git
-#   git branch -M main && git push -u origin main
+git add -A && git commit -m "..." && git push
 ```
 
 `.env`, `/android`, `/ios` and `*.apk` are git-ignored. `eas.json` is **not**
-ignored — if you pasted real Firebase values there and the repo is public,
-switch to `eas env:create` instead (see step 5A).
+ignored — it currently holds `REPLACE_ME` placeholders. If you paste real
+Firebase values there, keep the repo **private** (it is) or switch to
+`eas env:create` instead (see step 5A) before making it public.
 
 ---
 
