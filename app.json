@@ -31,8 +31,8 @@
         "backgroundColor": "#0E7C61"
       },
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "edgeToEdgeEnabled": true
     },
@@ -46,6 +46,18 @@
           "locationWhenInUsePermission": "Yalla Salah uses your location to calculate accurate prayer times for your city."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "440d3c3d-7642-40f1-aaa6-c2751521c478"
+      }
+    },
+    "owner": "omerkaya",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/440d3c3d-7642-40f1-aaa6-c2751521c478"
+    }
   }
 }
