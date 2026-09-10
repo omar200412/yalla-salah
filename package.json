@@ -11,7 +11,10 @@
     "assets": "node scripts/generate-assets.js",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes"
+    "login:firebase": "npx --yes firebase-tools login",
+    "deploy:rules": "npx --yes firebase-tools deploy --only firestore:rules,firestore:indexes",
+    "login:eas": "npx --yes eas-cli login",
+    "build:apk": "npx --yes eas-cli build --platform android --profile preview"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
