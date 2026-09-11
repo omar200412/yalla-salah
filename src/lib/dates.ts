@@ -45,6 +45,15 @@ export function formatTime(d: Date): string {
   return `${h}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+/** e.g. `5:04`, `12:00`, `7:09` - no meridiem, for tight columns. */
+export function formatTimeShort(d: Date): string {
+  let h = d.getHours();
+  const m = d.getMinutes();
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
 /** e.g. `2h 05m`, `3m 04s`, `9s`. Negative input clamps to `0s`. */
 export function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));

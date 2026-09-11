@@ -221,6 +221,8 @@ yalla-salah/
 │   ├── types/index.ts          shared domain types (PrayerKey, AppConfig, RoomDoc…)
 │   ├── lib/
 │   │   ├── dates.ts            todayKey, formatTime, formatCountdown, humanDate
+│   │   ├── layout.ts           pure responsive size tokens (unit-tested)
+│   │   ├── useMetrics.ts       binds layout.ts to live device width + fontScale
 │   │   ├── code.ts             6-digit code generate / validate / normalize
 │   │   └── haptics.ts
 │   ├── services/
@@ -234,17 +236,46 @@ yalla-salah/
 │   │   ├── useNow.ts            1-second tick for countdowns
 │   │   └── useRoomSync.ts       Firestore listeners + createRoom / joinRoom / toggle / rename / leave
 │   ├── components/
-│   │   ├── Button.tsx  TextField.tsx  Badge.tsx  ProgressBar.tsx
-│   │   ├── PrayerRow.tsx        one tappable prayer row
-│   │   ├── UserColumn.tsx       one person's card (5 rows + progress)
+│   │   ├── Button.tsx  TextField.tsx
+│   │   ├── PrayerTable.tsx      the whole checklist: 5 rows x 2 check columns
 │   │   └── WindowBanner.tsx     current window + countdown + 5 time chips
 │   └── screens/
 │       ├── OnboardingScreen.tsx name + create/join room
-│       ├── DashboardScreen.tsx  the two-column live dashboard
+│       ├── DashboardScreen.tsx  the live dashboard
 │       └── SettingsModal.tsx    name, code, location, method, madhab, leave
-├── __tests__/                  dates / code / prayerTimes unit tests
+├── __tests__/                  dates / code / prayerTimes / layout unit tests
 └── docs/superpowers/specs/     design document
 ```
+
+---
+
+## Responsive behaviour
+
+The dashboard is one table — five prayer rows, two check columns (yours is
+tappable and solid, your partner's is read-only and dashed). That single-table
+shape is what lets the prayer name keep a readable column on a 360dp phone;
+two side-by-side per-person cards left it only ~74dp and the name overlapped
+its own timestamp.
+
+[`src/lib/layout.ts`](src/lib/layout.ts) is a pure function of
+`(width, fontScale)` — no React, no React Native — so the sizing rules are
+unit-tested directly in [`__tests__/layout.test.ts`](__tests__/layout.test.ts).
+[`useMetrics.ts`](src/lib/useMetrics.ts) feeds it live values from
+`useWindowDimensions()`, so the layout reacts to rotation, split-screen resize,
+and the system font-size setting.
+
+| Condition | What changes |
+| --- | --- |
+| width < 340dp | Tighter padding, smaller checkboxes and slots, stacked banner, stacked invite buttons |
+| width ≥ 600dp | Extra breathing room (tablet / landscape) |
+| Name column too narrow for `English + العربية` | Arabic name is dropped rather than allowed to collide |
+| fontScale ≥ ~1.35 | Per-check timestamps are dropped |
+| Any fontScale | Checkbox and slot sizes grow with it (capped), rows use `minHeight` so text may wrap to two lines |
+
+React Native already multiplies every `fontSize` by the system font scale, so
+the code deliberately never shrinks type to compensate — that would defeat the
+accessibility setting. It grows the fixed-size boxes alongside the text and
+drops optional detail instead.
 
 ---
 

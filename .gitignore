@@ -39,3 +39,6 @@ GoogleService-Info.plist
 .idea/
 .vscode/
 *.tsbuildinfo
+
+# local UI audit scratch
+.scratch/

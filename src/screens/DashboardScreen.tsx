@@ -14,11 +14,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '../components/Button';
-import { UserColumn } from '../components/UserColumn';
+import { PrayerTable } from '../components/PrayerTable';
 import { WindowBanner } from '../components/WindowBanner';
 import { APP_NAME } from '../config/constants';
 import { humanDate } from '../lib/dates';
 import { tapFeedback } from '../lib/haptics';
+import { type Metrics } from '../lib/layout';
+import { useMetrics } from '../lib/useMetrics';
 import { findCity } from '../services/cities';
 import { detectCoords } from '../services/location';
 import { computeTimes } from '../services/prayerTimes';
@@ -32,6 +34,7 @@ import { SettingsModal } from './SettingsModal';
 
 export function DashboardScreen({ uid }: { uid: string }) {
   const t = useTheme();
+  const m = useMetrics();
   const { config, update } = useAppState();
   const today = useToday();
   const now = useNow(1000);
@@ -57,8 +60,8 @@ export function DashboardScreen({ uid }: { uid: string }) {
     return { lat: city.lat, lng: city.lng };
   }, [config.locationMode, config.coords, config.cityId]);
 
-  // Prayer times only need to be recomputed once a minute (and when config /
-  // day changes), even though `now` ticks every second for the countdown.
+  // Prayer times only need recomputing once a minute (and when config / day
+  // changes), even though `now` ticks every second for the countdown.
   const minuteBucket = Math.floor(now / 60_000);
   const prayer = useMemo(
     () =>
@@ -127,15 +130,25 @@ export function DashboardScreen({ uid }: { uid: string }) {
     <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]} edges={['top']}>
       <StatusBar style={t.mode === 'dark' ? 'light' : 'dark'} />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { padding: m.pagePadding, gap: m.tiny ? 10 : 14 },
+        ]}
+      >
         <View style={styles.header}>
-          <View>
-            <Text style={[styles.brand, { color: t.text }]}>{APP_NAME}</Text>
-            <Text style={[styles.date, { color: t.textDim }]}>{humanDate(new Date(now))}</Text>
+          <View style={styles.headerText}>
+            <Text style={[styles.brand, { color: t.text }]} numberOfLines={1}>
+              {APP_NAME}
+            </Text>
+            <Text style={[styles.date, { color: t.textDim }]} numberOfLines={1}>
+              {humanDate(new Date(now))}
+            </Text>
           </View>
           <Pressable
             onPress={() => setSettingsOpen(true)}
             hitSlop={12}
+            accessibilityRole="button"
             accessibilityLabel="Open settings"
             style={[styles.gear, { borderColor: t.border, backgroundColor: t.surface }]}
           >
@@ -144,6 +157,7 @@ export function DashboardScreen({ uid }: { uid: string }) {
         </View>
 
         <WindowBanner
+          metrics={m}
           times={prayer.times}
           currentKey={prayer.currentKey}
           next={prayer.next}
@@ -174,38 +188,29 @@ export function DashboardScreen({ uid }: { uid: string }) {
             <ActivityIndicator color={t.primary} />
           </View>
         ) : (
-          <View style={styles.columns}>
-            <UserColumn
-              title={myName}
-              subtitle="You"
-              marks={myMarks}
-              times={prayer.times}
-              currentKey={prayer.currentKey}
-              editable
-              onToggle={onToggle}
-            />
-
-            {partnerUid ? (
-              <UserColumn
-                title={partnerName ?? 'Partner'}
-                subtitle="Them"
-                marks={partnerMarks}
-                times={prayer.times}
-                currentKey={prayer.currentKey}
-                editable={false}
-              />
-            ) : (
-              <InviteColumn
-                t={t}
-                code={config.roomId ?? '—'}
-                onCopy={copyCode}
-                onShare={shareCode}
-              />
-            )}
-          </View>
+          <PrayerTable
+            metrics={m}
+            myName={myName}
+            partnerName={partnerName}
+            myMarks={myMarks}
+            partnerMarks={partnerMarks}
+            times={prayer.times}
+            currentKey={prayer.currentKey}
+            onToggle={onToggle}
+          />
         )}
 
-        <Text style={[styles.footer, { color: t.textDim }]}>
+        {!loading && !partnerUid ? (
+          <InviteCard
+            t={t}
+            m={m}
+            code={config.roomId ?? '—'}
+            onCopy={copyCode}
+            onShare={shareCode}
+          />
+        ) : null}
+
+        <Text style={[styles.footer, { color: t.textDim }]} numberOfLines={2}>
           Room {config.roomId} · resets at midnight · live sync
         </Text>
       </ScrollView>
@@ -233,29 +238,49 @@ export function DashboardScreen({ uid }: { uid: string }) {
 /* Local components                                                    */
 /* ------------------------------------------------------------------ */
 
-function InviteColumn({
+function InviteCard({
   t,
+  m,
   code,
   onCopy,
   onShare,
 }: {
   t: Theme;
+  m: Metrics;
   code: string;
   onCopy: () => void;
   onShare: () => void;
 }) {
   return (
-    <View style={[styles.invite, { backgroundColor: t.surfaceAlt, borderColor: t.border }]}>
+    <View
+      style={[
+        styles.invite,
+        { backgroundColor: t.surfaceAlt, borderColor: t.border, padding: m.cardPadding + 2 },
+      ]}
+    >
       <Text style={[styles.inviteTitle, { color: t.text }]}>Invite your partner</Text>
       <Text style={[styles.inviteBody, { color: t.textDim }]}>
-        Share this code. They enter it on their phone to pair.
+        Share this code. They enter it on their phone to pair, and the second column fills in.
       </Text>
       <View style={[styles.inviteCodeBox, { borderColor: t.border, backgroundColor: t.surface }]}>
-        <Text style={[styles.inviteCode, { color: t.primary }]}>{code}</Text>
+        <Text
+          style={[styles.inviteCode, { color: t.primary, letterSpacing: m.tiny ? 4 : 8 }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {code}
+        </Text>
       </View>
-      <View style={styles.inviteButtons}>
-        <Button label="Share" onPress={onShare} />
-        <Button label="Copy code" variant="secondary" onPress={onCopy} />
+      <View style={m.tiny ? styles.inviteButtonsStacked : styles.inviteButtonsRow}>
+        {/* `flex: 1` only makes sense while the buttons sit side by side; in a
+            column it would stretch them vertically. */}
+        <Button label="Share" onPress={onShare} style={m.tiny ? undefined : styles.grow} />
+        <Button
+          label="Copy code"
+          variant="secondary"
+          onPress={onCopy}
+          style={m.tiny ? undefined : styles.grow}
+        />
       </View>
     </View>
   );
@@ -297,12 +322,14 @@ function LocationHint({
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { padding: 16, gap: 14, paddingBottom: 40 },
+  content: { paddingBottom: 40 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
   },
+  headerText: { flex: 1, minWidth: 0 },
   brand: { fontSize: 22, fontWeight: '800', letterSpacing: 0.3 },
   date: { fontSize: 13, fontWeight: '600', marginTop: 2 },
   gear: {
@@ -314,23 +341,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   gearIcon: { fontSize: 18 },
-  columns: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   loading: { paddingVertical: 48, alignItems: 'center' },
-  errorBox: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-    gap: 2,
-  },
+  errorBox: { borderRadius: 12, borderWidth: 1, padding: 12, gap: 2 },
   errorText: { fontSize: 13, fontWeight: '700' },
   errorDismiss: { fontSize: 11 },
   footer: { fontSize: 11, textAlign: 'center', marginTop: 6 },
 
   invite: {
-    flex: 1,
     borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 14,
     gap: 10,
   },
   inviteTitle: { fontSize: 15, fontWeight: '800' },
@@ -339,10 +358,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     paddingVertical: 12,
+    paddingHorizontal: 8,
     alignItems: 'center',
   },
-  inviteCode: { fontSize: 24, fontWeight: '900', letterSpacing: 6 },
-  inviteButtons: { gap: 8 },
+  inviteCode: { fontSize: 26, fontWeight: '900' },
+  inviteButtonsRow: { flexDirection: 'row', gap: 8 },
+  inviteButtonsStacked: { gap: 8 },
+  grow: { flex: 1 },
 
   hint: {
     borderRadius: 12,
@@ -353,7 +375,7 @@ const styles = StyleSheet.create({
   hintTextWrap: { gap: 2 },
   hintTitle: { fontSize: 14, fontWeight: '800' },
   hintBody: { fontSize: 12 },
-  hintActions: { flexDirection: 'row', gap: 18, alignItems: 'center' },
+  hintActions: { flexDirection: 'row', gap: 18, alignItems: 'center', flexWrap: 'wrap' },
   hintAllow: { fontSize: 13, fontWeight: '800' },
   hintSecondary: { fontSize: 13, fontWeight: '600' },
 });

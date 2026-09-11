@@ -1,7 +1,7 @@
 import { MethodKey } from '../types';
 
 export const APP_NAME = 'Yalla Salah';
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 export const STORAGE_KEYS = {
   config: '@yalla-salah/config:v1',
